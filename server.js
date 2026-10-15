@@ -17,7 +17,70 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 app.use(express.static(path.join(__dirname, 'public')));
-process.env.YDOTOOL_SOCKET = process.env.YDOTOOL_SOCKET || '/tmp/ydotoold.socket';
+const fs = require('fs');
+
+// Linux Wayland ydotool socket auto-discovery & daemon management
+function canAccessSocket(socketPath) {
+  if (!socketPath) return false;
+  try {
+    fs.accessSync(socketPath, fs.constants.R_OK | fs.constants.W_OK);
+    const { execSync } = require('child_process');
+    execSync(`YDOTOOL_SOCKET="${socketPath}" ydotool mousemove -- 0 0`, { stdio: 'ignore', timeout: 500 });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function initYdotool() {
+  if (process.platform !== 'linux') return null;
+
+  const user = process.env.USER || 'user';
+  const userSocket = `/tmp/ydotool_${user}.socket`;
+  const uid = typeof process.getuid === 'function' ? process.getuid() : 1000;
+
+  const candidates = [
+    process.env.YDOTOOL_SOCKET,
+    `/run/user/${uid}/.ydotool_socket`,
+    userSocket,
+    '/tmp/.ydotool_socket',
+    '/tmp/ydotoold.socket'
+  ].filter(Boolean);
+
+  for (const s of candidates) {
+    if (canAccessSocket(s)) {
+      process.env.YDOTOOL_SOCKET = s;
+      console.log(`  🎮 Linux ydotool connected via socket: ${s}`);
+      return s;
+    }
+  }
+
+  // Attempt to spawn user-level ydotoold daemon if socket is not found or not writable
+  try {
+    if (fs.existsSync(userSocket)) fs.unlinkSync(userSocket);
+    const daemon = spawn('ydotoold', [`--socket-path=${userSocket}`, '--socket-perm=0666'], {
+      detached: true,
+      stdio: 'ignore'
+    });
+    daemon.unref();
+
+    const { execSync } = require('child_process');
+    for (let i = 0; i < 20; i++) {
+      if (canAccessSocket(userSocket)) {
+        process.env.YDOTOOL_SOCKET = userSocket;
+        console.log(`  🎮 Started user-level ydotoold daemon on: ${userSocket}`);
+        return userSocket;
+      }
+      try { execSync('sleep 0.05'); } catch (e) {}
+    }
+  } catch (err) {
+    console.warn('  ⚠️ Could not spawn user-level ydotoold:', err.message);
+  }
+
+  return process.env.YDOTOOL_SOCKET || userSocket;
+}
+
+initYdotool();
 
 function runCmd(cmd) {
   return new Promise((resolve) => {
@@ -28,10 +91,24 @@ function runCmd(cmd) {
 }
 
 function runYdotool(cmd) {
+  const socket = process.env.YDOTOOL_SOCKET || initYdotool();
   return new Promise((resolve) => {
-    exec(`YDOTOOL_SOCKET="${process.env.YDOTOOL_SOCKET}" ydotool ${cmd}`, (err, stdout) => {
+    exec(`YDOTOOL_SOCKET="${socket}" ydotool ${cmd}`, (err, stdout) => {
       resolve({ success: !err, output: (stdout || '').trim() });
     });
+  });
+}
+
+function copyToWayland(text) {
+  return new Promise((resolve) => {
+    try {
+      const cp = spawn('wl-copy', ['--', text], { stdio: 'ignore', detached: true });
+      cp.on('error', () => resolve(false));
+      cp.unref();
+      setTimeout(() => resolve(true), 35);
+    } catch (e) {
+      resolve(false);
+    }
   });
 }
 
@@ -83,12 +160,17 @@ async function typeTextToPC(text) {
   if (!text) return;
   return queueType(async () => {
     if (process.platform === 'linux') {
-      const escaped = text.replace(/'/g, "'\\''");
-      const copyRes = await runCmd(`wl-copy -- '${escaped}'`);
-      if (copyRes.success) {
-        const pasteRes = await runYdotool('key 29:1 47:1 47:0 29:0'); // Ctrl+V
-        if (pasteRes.success) return;
+      // For single ASCII keys, type directly with ydotool for zero clipboard overhead
+      if (text.length === 1 && /^[\x20-\x7E]$/.test(text)) {
+        const escaped = text.replace(/(["'$`\\])/g, '\\$1');
+        const res = await runYdotool(`type -d 0 -H 0 -- "${escaped}"`);
+        if (res.success) return;
       }
+      // For multiline, Cyrillic, speech-to-text, or long words: non-blocking wl-copy + Ctrl+V
+      await copyToWayland(text);
+      const pasteRes = await runYdotool('key 29:1 47:1 47:0 29:0'); // Ctrl+V
+      if (pasteRes.success) return;
+      const escaped = text.replace(/'/g, "'\\''");
       await runYdotool(`type -- '${escaped}'`);
     } else if (process.platform === 'darwin') {
       // Escape for AppleScript string literal

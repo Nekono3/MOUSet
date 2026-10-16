@@ -3,6 +3,7 @@ let ws = null;
 let isConnected = false;
 let hapticsEnabled = true;
 let sensitivity = 1.5;
+let scrollSensitivity = 1.0;
 let invertScroll = true;
 let currentVolume = 70;
 let currentLang = 'en-US';
@@ -47,6 +48,8 @@ const closeSettingsBackdrop = document.getElementById('closeSettingsBackdrop');
 const settingsModal = document.getElementById('settingsModal');
 const sensitivitySlider = document.getElementById('sensitivitySlider');
 const sensitivityVal = document.getElementById('sensitivityVal');
+const scrollSensitivitySlider = document.getElementById('scrollSensitivitySlider');
+const scrollSensitivityVal = document.getElementById('scrollSensitivityVal');
 const invertScrollCheckbox = document.getElementById('invertScrollCheckbox');
 const hapticsCheckbox = document.getElementById('hapticsCheckbox');
 const btnSwitchDeviceFromSettings = document.getElementById('btnSwitchDeviceFromSettings');
@@ -406,6 +409,7 @@ let touchStartTime = 0;
 let lastTouchX = 0;
 let lastTouchY = 0;
 let hasMoved = false;
+let scrollAccumulator = 0;
 
 function updateTouchPositions(e) {
   const rect = canvas.getBoundingClientRect();
@@ -422,6 +426,7 @@ function updateTouchPositions(e) {
 canvas.addEventListener('touchstart', (e) => {
   touchStartTime = Date.now();
   hasMoved = false;
+  scrollAccumulator = 0;
   updateTouchPositions(e);
 
   if (e.touches.length === 1) {
@@ -456,19 +461,23 @@ canvas.addEventListener('touchmove', (e) => {
 
   } else if (e.touches.length === 2) {
     const currentY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-    const rawDeltaY = (currentY - lastTouchY) * 2;
+    const rawDeltaY = (currentY - lastTouchY);
+    scrollAccumulator += rawDeltaY * scrollSensitivity * 0.35;
 
-    if (Math.abs(rawDeltaY) > 1.5) {
+    if (Math.abs(scrollAccumulator) >= 1.0) {
       hasMoved = true;
-      const scrollDy = invertScroll ? rawDeltaY : -rawDeltaY;
+      const steps = Math.trunc(scrollAccumulator);
+      scrollAccumulator -= steps;
+      const scrollDy = invertScroll ? -steps : steps;
       sendAction('MOUSE_SCROLL', { dy: scrollDy });
-      lastTouchY = currentY;
     }
+    lastTouchY = currentY;
   }
 }, { passive: false });
 
 canvas.addEventListener('touchend', (e) => {
   updateTouchPositions(e);
+  scrollAccumulator = 0;
   const duration = Date.now() - touchStartTime;
 
   if (!hasMoved && duration < 250) {
@@ -780,6 +789,11 @@ closeSettingsBackdrop.addEventListener('click', () => {
 sensitivitySlider.addEventListener('input', (e) => {
   sensitivity = parseFloat(e.target.value);
   sensitivityVal.textContent = `${sensitivity.toFixed(1)}x`;
+});
+
+scrollSensitivitySlider.addEventListener('input', (e) => {
+  scrollSensitivity = parseFloat(e.target.value);
+  scrollSensitivityVal.textContent = `${scrollSensitivity.toFixed(1)}x`;
 });
 
 invertScrollCheckbox.addEventListener('change', (e) => {

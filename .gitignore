@@ -1,4 +1,41 @@
+# Dependencies
 node_modules/
-.DS_Store
+package-lock.json.bak
+
+# Logs & Temporary Files
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 /tmp/
+temp_node/
+
+# OS-Specific
+.DS_Store
+Thumbs.db
+
+# Clean-Room Guard (Strictly prevent binaries, dumps, and reverse engineering databases)
+*.exe
+*.dll
+*.so
+*.dylib
+*.bin
+*.rom
+*.iso
+*.apk
+*.ipa
+*.idb
+*.i64
+*.nam
+*.til
+*.gpr
+*.rep/
+*.bndb
+*.dmp
+*.dump
+*.pcap
+*.pcapng
+
+# Environment
+.env
+.env.local

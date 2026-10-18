@@ -1,7 +1,7 @@
 @echo off
-title Mousely Presentation Remote
+title MOUSet Presentation Remote & Trackpad
 echo ==================================================
-echo   🚀 Starting Mousely for Windows...
+echo   🚀 Starting MOUSet for Windows...
 echo ==================================================
 
 where node >nul 2>nul

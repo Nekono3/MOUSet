@@ -482,6 +482,8 @@ wss.on('connection', async (ws, req) => {
 function findCloudflared() {
   const fs = require('fs');
   const candidates = [
+    path.join(os.homedir(), '.mouset', 'bin', process.platform === 'win32' ? 'cloudflared.exe' : 'cloudflared'),
+    path.join(os.homedir(), '.mouset', process.platform === 'win32' ? 'cloudflared.exe' : 'cloudflared'),
     path.join(os.homedir(), '.mousely', 'bin', process.platform === 'win32' ? 'cloudflared.exe' : 'cloudflared'),
     path.join(os.homedir(), '.mousely', process.platform === 'win32' ? 'cloudflared.exe' : 'cloudflared'),
     path.join(os.homedir(), '.local', 'bin', 'cloudflared'),
@@ -561,7 +563,7 @@ function printLocalFallback() {
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log('\n' + '='.repeat(54));
-  console.log('  🚀 MOUSELY UNIVERSAL WEB HUB RUNNING');
+  console.log('  🚀 MOUSET UNIVERSAL WEB HUB RUNNING');
   console.log('='.repeat(54));
   console.log(`\n  🏠 Local URL: ${localURL}\n`);
 

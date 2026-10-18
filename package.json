@@ -1,7 +1,7 @@
 {
-  "name": "mousely-web",
+  "name": "mouset",
   "version": "1.0.0",
-  "description": "Phone-as-presentation-remote and trackpad over local network with QR pairing",
+  "description": "MOUSet (MOUSE + SET) — Clean-room open-protocol mobile trackpad & presentation controller for cross-platform desktop interoperability",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

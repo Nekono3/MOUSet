@@ -2,10 +2,15 @@
 set -e
 
 echo "=================================================="
-echo "  🚀 Mousely Auto-Setup & Launch"
+echo "  🚀 MOUSet Auto-Setup & Launch"
 echo "=================================================="
 
-INSTALL_DIR="$HOME/.mousely"
+INSTALL_DIR="$HOME/.mouset"
+if [ ! -d "$INSTALL_DIR" ] && [ -d "$HOME/.mousely" ]; then
+    echo "📦 Migrating legacy profile to MOUSet..."
+    mv "$HOME/.mousely" "$INSTALL_DIR" 2>/dev/null || true
+fi
+
 mkdir -p "$INSTALL_DIR/bin"
 export PATH="$INSTALL_DIR/bin:$PATH"
 
@@ -63,13 +68,13 @@ if ! command -v cloudflared &> /dev/null && [ ! -f "$INSTALL_DIR/bin/cloudflared
     fi
 fi
 
-# 3. Clone or update Mousely
+# 3. Clone or update MOUSet
 if [ -d "$INSTALL_DIR/app" ]; then
-    echo "📦 Updating Mousely..."
+    echo "📦 Updating MOUSet..."
     cd "$INSTALL_DIR/app"
     git pull origin main 2>/dev/null || true
 else
-    echo "📦 Downloading Mousely..."
+    echo "📦 Downloading MOUSet..."
     git clone https://github.com/Nekono3/mousely.git "$INSTALL_DIR/app"
     cd "$INSTALL_DIR/app"
 fi
@@ -79,7 +84,7 @@ npm install --silent
 
 echo ""
 echo "=================================================="
-echo "  🌟 Starting Mousely Presentation Hub..."
+echo "  🌟 Starting MOUSet Universal Web Hub..."
 echo "=================================================="
 echo ""
 node server.js

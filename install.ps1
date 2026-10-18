@@ -1,10 +1,17 @@
 $ErrorActionPreference = "Stop"
 
 Write-Host "==================================================" -ForegroundColor Cyan
-Write-Host "  🚀 Mousely Auto-Setup & Launch for Windows" -ForegroundColor Cyan
+Write-Host "  🚀 MOUSet Auto-Setup & Launch for Windows" -ForegroundColor Cyan
 Write-Host "==================================================" -ForegroundColor Cyan
 
-$installDir = "$env:USERPROFILE\.mousely"
+$installDir = "$env:USERPROFILE\.mouset"
+$legacyDir = "$env:USERPROFILE\.mousely"
+
+if (-not (Test-Path $installDir) -and (Test-Path $legacyDir)) {
+    Write-Host "📦 Migrating legacy profile to MOUSet..." -ForegroundColor Green
+    Rename-Item -Path $legacyDir -NewName ".mouset" -ErrorAction SilentlyContinue
+}
+
 if (-not (Test-Path $installDir)) {
     New-Item -ItemType Directory -Path $installDir | Out-Null
 }
@@ -34,14 +41,14 @@ if (Test-Path "$installDir\node-win") {
     $env:PATH = "$installDir\node-win;" + $env:PATH
 }
 
-# 2. Clone or update Mousely
+# 2. Clone or update MOUSet
 $appDir = "$installDir\app"
 if (Test-Path $appDir) {
-    Write-Host "📦 Updating Mousely..." -ForegroundColor Green
+    Write-Host "📦 Updating MOUSet..." -ForegroundColor Green
     Set-Location $appDir
     git pull origin main 2>$null
 } else {
-    Write-Host "📦 Downloading Mousely..." -ForegroundColor Green
+    Write-Host "📦 Downloading MOUSet..." -ForegroundColor Green
     git clone https://github.com/Nekono3/mousely.git $appDir
     Set-Location $appDir
 }
@@ -51,7 +58,7 @@ npm install --silent
 
 Write-Host ""
 Write-Host "==================================================" -ForegroundColor Cyan
-Write-Host "  🌟 Starting Mousely Presentation Hub..." -ForegroundColor Cyan
+Write-Host "  🌟 Starting MOUSet Universal Web Hub..." -ForegroundColor Cyan
 Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host ""
 

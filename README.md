@@ -1,6 +1,15 @@
-# 📱 MOUSet — Clean-Room Presentation Remote & Multi-Touch Trackpad
+<div align="center">
 
-> **MOUSet** *(MOUSE + SET)*: An independent, clean-room open-protocol mobile remote control system. Turn any smartphone (iPhone / Android) into a sleek presentation clicker, multi-touch trackpad, rapid voice dictation assistant, and system volume controller for your computer. Zero app store installations required.
+# 📱 MOUSet &mdash; Zero-Install Mobile Presentation Remote & Multi-Touch Trackpad
+
+**Clean-room open-protocol mobile remote control system. Turn any smartphone (iPhone / Android) into an ultra-low latency presentation clicker, multi-touch trackpad, voice dictation assistant, and system volume controller.**
+
+[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![WebSockets](https://img.shields.io/badge/Protocol-WebSockets%20(RFC%206455)-010101?style=for-the-badge&logo=socketdotio&logoColor=white)](https://datatracker.ietf.org/doc/html/rfc6455)
+[![Cross Platform](https://img.shields.io/badge/OS-Windows%20%7C%20macOS%20%7C%20Linux-blue?style=for-the-badge)](https://github.com/Nekono3/mousely)
+[![Zero Install](https://img.shields.io/badge/Client-Zero%20App%20Store%20Installs-success?style=for-the-badge)](https://github.com/Nekono3/mousely)
+
+</div>
 
 ---
 
@@ -14,6 +23,38 @@ irm https://raw.githubusercontent.com/Nekono3/mousely/main/install.ps1 | iex
 ### 🍎 macOS & 🐧 Linux (Run in Terminal):
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Nekono3/mousely/main/install.sh | bash
+```
+
+---
+
+## 🏗 System Architecture & Protocol Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 👤 Presenter (Phone)
+    participant PhoneUI as 📱 Browser Client (PWA)
+    participant WS as ⚡ WebSocket Server (Node.js)
+    participant Accumulator as 🧮 Sub-pixel Delta Engine
+    participant OS as 🖥️ OS Input Subsystem (Wayland/Win32/macOS)
+
+    Note over PhoneUI,WS: Local WiFi Network Handshake
+    PhoneUI->>WS: Connect via QR / 4-Digit PIN (RFC 6455)
+    WS-->>PhoneUI: Session Authenticated & State Synchronized
+
+    loop Continuous Touch Stream (60-120 Hz)
+        User->>PhoneUI: Multi-touch drag / pinch / scroll
+        PhoneUI->>WS: Binary JSON packet: {dx, dy, fingers, state}
+        WS->>Accumulator: Apply non-linear acceleration & sensitivity curve
+        Accumulator->>OS: Dispatch native kernel input event
+        Note over OS: Wayland (ydotoold) / Win32 (SendInput) / macOS (CoreGraphics)
+    end
+
+    opt Voice Dictation
+        User->>PhoneUI: Speech in EN / RU (Web Speech API)
+        PhoneUI->>WS: Transcribed text string
+        WS->>OS: Synthesize native keystrokes directly into active application
+    end
 ```
 
 ---
@@ -72,9 +113,12 @@ npm start
 
 ---
 
-## ⚖️ Legal Disclaimer
+## 👨‍💻 Author & Contact
 
-This project is an independent, clean-room reimplementation created strictly for interoperability and educational purposes. It contains no proprietary code, binaries, or copyrighted assets belonging to any commercial entities. To use this software, you must supply your own legally acquired operating system and devices. MOUSet is not affiliated with, endorsed by, or connected to any third-party software vendors.
+- **Belek Tazhibaev (Blake)** &mdash; Systems & Full-Stack Developer
+- **GitHub:** [@Nekono3](https://github.com/Nekono3)
+- **Telegram:** [@Chromatic_s](https://t.me/Chromatic_s)
+- **Email:** [tazhibaev0909@gmail.com](mailto:tazhibaev0909@gmail.com)
 
 ---
 
